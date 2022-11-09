@@ -26,10 +26,10 @@ Also allows for specifying what date format you want back though it has to confo
 ### How to use:
 most direct use will be to import `date_range_iterator` from date_range_handlers i.e
 ```python
-    from date_range_handlers import date_range_iterator`
+    from date_range_handlers import date_range_iterator
 
 
-    date_iterator = date_range_handler(
+    date_iterator = date_range_iterator(
         start_date=datetime, 
         end_date=datetime, 
         interval="1_week", 
