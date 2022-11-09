@@ -53,7 +53,7 @@ class BaseDateInterval(ABC):
 
         Args:
             start_date (datetime): start date inclusive
-            end_date (datetime): the end date exclusive
+            end_date (datetime): the end date inclusive
 
         Yields:
             Generator[Tuple[str, str], None, None]: yields the start and end date (exclusive)
@@ -61,7 +61,7 @@ class BaseDateInterval(ABC):
 
         start_date = self.get_start_date(start_date=start_date)
         next_end = self.add_interval(date_value=start_date, cadence=self.cadence)
-        while start_date < end_date:
+        while start_date <= end_date:
             yield datetime.strftime(start_date, self.time_format), datetime.strftime(
                 next_end, self.time_format
             )

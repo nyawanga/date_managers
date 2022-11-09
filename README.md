@@ -13,10 +13,10 @@ The rules guiding what interval gets applied are as follows:
 - 1_week/2_week/n_week: start from the start_date provided
 
 
-The interval should return start_date  that should be inclusive and end_date that is exclusive i.e not included in the target date range for example:
-`Given input start_date 2022-01-01 and end_date 2022-01-03 with daily interval we get back these pairs:
-
+For each interval, it should return start date  that should be inclusive and end date that is exclusive but the final range `MUST` include the provided end_date.  For example:
 ```
+Given input start_date 2022-01-01 and end_date 2022-01-03 with daily interval we get back these pairs:
+
 2022-01-01 2022-01-02
 2022-01-02 2022-01-03
 2022-01-03 2022-01-04
