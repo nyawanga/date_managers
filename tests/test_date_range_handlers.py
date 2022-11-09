@@ -167,6 +167,7 @@ class TestReaders:
             datetime(2022, 11, 9), datetime(2022, 11, 11)
         )
         assert next(iterator) == ("2022-11-09", "2022-11-11")
+        assert next(iterator) == ("2022-11-11", "2022-11-13")
         with pytest.raises(StopIteration):
             next(iterator)
 
