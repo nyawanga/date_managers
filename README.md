@@ -55,4 +55,5 @@ most direct use will be to import `date_range_iterator` from date_range_handlers
 - `interval` string as described on the interval date string rules
 - `end_inclusive` boolean if `True` withing each interval start and end, the end date value will be inclusive otherwise exclusive
 - `time_format` the time format that you want back from the function.
+
 You can also build your own entry point by importing `DateHandlerFactory` from `date_managers`
