@@ -50,9 +50,9 @@ most direct use will be to import `date_range_iterator` from date_range_handlers
         ## do something  
 ```
 ### Parameters
-`start_date`  date_string as described on the date string rules
-`end_date`  date string as described on the date string rules
-`interval` string as described on the interval date string rules
-`end_inclusive` boolean if `True` withing each interval start and end, the end date value will be inclusive otherwise exclusive
-`time_format` the time format that you want back from the function.
+- `start_date`  date_string as described on the date string rules
+- `end_date`  date string as described on the date string rules
+- `interval` string as described on the interval date string rules
+- `end_inclusive` boolean if `True` withing each interval start and end, the end date value will be inclusive otherwise exclusive
+- `time_format` the time format that you want back from the function.
 You can also build your own entry point by importing `DateHandlerFactory` from `date_managers`
