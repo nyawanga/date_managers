@@ -6,7 +6,6 @@ from datetime import datetime, timedelta
 import re
 from typing import Tuple, Generator, Union
 from dateutil.relativedelta import relativedelta
-import pandas as pd
 from exceptions import (
     TimeIntervalError,
     TimeBucketError,
