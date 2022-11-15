@@ -3,7 +3,7 @@
 
 import os
 import sys
-from datetime import datetime
+from datetime import datetime, timedelta
 
 import pytest
 
@@ -11,20 +11,31 @@ import pytest
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.dirname(SCRIPT_DIR))
 # from base_test import BaseTest
-from date_range_handlers import (
+from exceptions import (
+    TimeIntervalError,
+    TimeBucketError,
+    CadenceTimeBucketError,
+    DateValueError,
+)
+
+from date_managers import (
     DayInterval,
     MonthInterval,
     YearInterval,
     WeekInterval,
-    DateIntervalHandler,
+    PastDatePhraseHandler,
+    IntervalDatePhraseHandler,
+    DateHandlerFactory,
+    date_string_handler,
+    date_range_iterator,
 )
 
 
 # @pytest.mark.usefixtures("environ_fixture")
-class TestReaders:
+class TestDateManagers:
     """Class for Date Handler Classes and Methods"""
 
-    def map_interval_bucket(self) -> dict:
+    def time_bucket_mapping(self) -> dict:
         """map interval with base bucket
 
         Args:
@@ -33,180 +44,148 @@ class TestReaders:
         Returns:
             dict:
         """
-        interval_bucket = {
-            "day": ["day"],
-            "week": ["week", "weekly"],
-            "month": ["month", "monthly"],
-            "year": ["year", "yearly"],
+        time_bucket_mapping = {
+            "day": ["day", "yesterday", "today"],
+            "week": ["week", "weekly", "last_week"],
+            "month": ["month", "monthly", "last_month"],
+            "year": ["year", "yearly", "last_year"],
         }
 
-        return interval_bucket
+        return time_bucket_mapping
 
-    def test_date_interval_factory(self):
-        """Test the init method"""
+    def date_handler_classes(self):
+        """Fixture for date handlers"""
+        return {
+            "day": DayInterval,
+            "week": WeekInterval,
+            "month": MonthInterval,
+            "year": YearInterval,
+        }
 
-        handler = DateIntervalHandler(interval="day", time_format="%Y-%m-%d")
-        interval_handler = handler.range_iterator_factory()
-        assert handler.time_bucket == "day"
+    def test_past_date_phrase_handler(self):
+        """Test the class PastDatePhraseHandler"""
+
+        handler = PastDatePhraseHandler("1_week_ago")
+        assert handler.date_value == "1_week_ago"
+        assert handler.cadence is None
+        assert handler.time_bucket is None
+
+        handler.phrase_to_date()
         assert handler.cadence == 1
-        assert handler.root_bucket == "day"
-        assert handler.time_format == "%Y-%m-%d"
-        assert isinstance(interval_handler, DayInterval)
-
-        handler = DateIntervalHandler(interval="2_day", time_format="%Y-%m-%d")
-        interval_handler = handler.range_iterator_factory()
-        assert handler.time_bucket == "day"
-        assert handler.cadence == 2
-        assert handler.root_bucket == "day"
-        assert handler.time_format == "%Y-%m-%d"
-        assert isinstance(interval_handler, DayInterval)
-
-    def test_monthly_interval_processor_method(self):
-        """Test the init method"""
-
-        handler = DateIntervalHandler(interval="Monthly", time_format="%Y-%m-%d")
-        interval_handler = handler.range_iterator_factory()
-        assert handler.time_bucket == "monthly"
-        assert handler.cadence == 1
-        assert handler.root_bucket == "month"
-        assert isinstance(interval_handler, MonthInterval)
-
-        handler = DateIntervalHandler(interval="2_month", time_format="%Y-%m-%d")
-        interval_handler = handler.range_iterator_factory()
-
-        assert handler.time_bucket == "month"
-        assert handler.cadence == 2
-        assert handler.root_bucket == "month"
-        assert isinstance(interval_handler, MonthInterval)
-
-    def test_year_interval_processor_method(self):
-        """Test the init method"""
-
-        handler = DateIntervalHandler(interval="yearly", time_format="%Y-%m-%d")
-        interval_handler = handler.range_iterator_factory()
-
-        assert handler.time_bucket == "yearly"
-        assert handler.cadence == 1
-        assert handler.root_bucket == "year"
-        assert isinstance(interval_handler, YearInterval)
-
-        handler = DateIntervalHandler(interval="3_year", time_format="%Y-%m-%d")
-        interval_handler = handler.range_iterator_factory()
-
-        assert handler.time_bucket == "year"
-        assert handler.cadence == 3
-        assert handler.root_bucket == "year"
-        assert isinstance(interval_handler, YearInterval)
-
-    def test_week_interval_processor_method(self):
-        """Test the init method"""
-
-        handler = DateIntervalHandler(interval="2_weekly", time_format="%Y-%m-%d")
-        interval_handler = handler.range_iterator_factory()
-
-        assert handler.time_bucket == "weekly"
-        assert handler.cadence == 2
-        assert handler.root_bucket == "week"
-        assert isinstance(interval_handler, WeekInterval)
-
-        handler = DateIntervalHandler(interval="1_week", time_format="%Y-%m-%d")
-        interval_handler = handler.range_iterator_factory()
-
         assert handler.time_bucket == "week"
+
+        handler = PastDatePhraseHandler("1")
+        with pytest.raises(TypeError):
+            handler.phrase_to_date()
+
+        handler = PastDatePhraseHandler("2_years_before")
+        with pytest.raises(DateValueError):
+            handler.phrase_to_date()
+
+        handler = PastDatePhraseHandler("daily")
+        with pytest.raises(CadenceTimeBucketError):
+            handler.phrase_to_date()
+
+    def test_interval_date_phrase_handler(self):
+        """Test the class PastDatePhraseHandler"""
+
+        handler = IntervalDatePhraseHandler("monthly")
+        assert handler.date_value == "monthly"
+        assert handler.cadence is None
+        assert handler.time_bucket is None
+
+        handler.phrase_to_date()
         assert handler.cadence == 1
-        assert handler.root_bucket == "week"
-        assert isinstance(interval_handler, WeekInterval)
+        assert handler.time_bucket == "monthly"
 
-    def test_interval_processor_wrong_interval_type(self):
-        """Test the stemmer method"""
+        handler = IntervalDatePhraseHandler("1")
+        with pytest.raises(TypeError):
+            handler.phrase_to_date()
+
+        handler = IntervalDatePhraseHandler("2_month_before")
+        with pytest.raises(TimeIntervalError):
+            handler.phrase_to_date()
+
+        handler = IntervalDatePhraseHandler("quarterly")
+        with pytest.raises(CadenceTimeBucketError):
+            handler.phrase_to_date()
+
+    def test_data_handler_factory(self):
+        """Test dat_handler_factory"""
+        time_bucket_mapping = self.time_bucket_mapping()
+        for key, val in time_bucket_mapping.items():
+            for time_bucket in val:
+                handler = DateHandlerFactory()
+                date_handler = handler.get_date_handler(
+                    time_bucket=time_bucket, cadence=1
+                )
+                if key == "day":
+                    assert isinstance(date_handler, DayInterval)
+                if key == "week":
+                    assert isinstance(date_handler, WeekInterval)
+                if key == "month":
+                    assert isinstance(date_handler, MonthInterval)
+                if key == "year":
+                    assert isinstance(date_handler, YearInterval)
+
+        wrong_time_buckets = ["annually", "quarterly", "daily", "termly", "biannually"]
+        for time_bucket in wrong_time_buckets:
+            with pytest.raises(TimeBucketError):
+                handler = DateHandlerFactory()
+                date_handler = handler.get_date_handler(
+                    time_bucket="annually", cadence=1
+                )
+
+    def test_date_string_handler(self):
+        """Test sate_string_handler method"""
+
+        assert date_string_handler("2022-11-14") == datetime.strptime(
+            "2022-11-14", "%Y-%m-%d"
+        )
+
+        assert datetime.strftime(
+            date_string_handler("today"), "%Y-%m-%d"
+        ) == datetime.strftime(datetime.now(), "%Y-%m-%d")
+
+        yesterday_date = datetime.now() - timedelta(days=1)
+        assert datetime.strftime(
+            date_string_handler("yesterday"), "%Y-%m-%d"
+        ) == datetime.strftime(yesterday_date, "%Y-%m-%d")
 
         with pytest.raises(TypeError):
-            DateIntervalHandler(
-                interval="50", time_format="%Y-%m-%d"
-            ).range_iterator_factory()
+            date_string_handler("2022/11/14")
+        with pytest.raises(DateValueError):
+            date_string_handler("1_Week")
 
-        with pytest.raises(TypeError):
-            DateIntervalHandler(
-                interval=None, time_format="%Y-%m-%d"
-            ).range_iterator_factory()
-
-        with pytest.raises(TypeError):
-            DateIntervalHandler(
-                interval="", time_format="%Y-%m-%d"
-            ).range_iterator_factory()
-
-        with pytest.raises(TypeError):
-            DateIntervalHandler(
-                interval=1234, time_format="%Y-%m-%d"
-            ).range_iterator_factory()
-
-    def test_interval_processor_wrong_value(self):
-        """Test the stemmer method"""
-
-        with pytest.raises(ValueError):
-            DateIntervalHandler(
-                interval="2_weekly_another", time_format="%Y-%m-%d"
-            ).range_iterator_factory()
-
-        with pytest.raises(ValueError):
-            DateIntervalHandler(
-                interval="weeks", time_format="%Y-%m-%d"
-            ).interval_processor()
-
-    def test_get_interval_bucket(self):
-        """Test interval_bucket_mapping"""
-        handler = DateIntervalHandler(interval="2_", time_format="%Y-%m-%d")
-        assert isinstance(handler.interval_bucket_mapping, dict)
-
-    def test_exist_conditions(self):
-        """test range_iterator exit conditions"""
-        handler = DateIntervalHandler(interval="2_day", time_format="%Y-%m-%d")
-        interval_handler = handler.range_iterator_factory()
-
-        iterator = interval_handler.range_iterator(
-            datetime(2022, 11, 9), datetime(2022, 11, 11)
+    def test_date_range_iterator_end_inclusive_true(self):
+        """Test date_range_iterator"""
+        start_date, end_date = "2022-11-14", "2022-11-15"
+        date_iterator = date_range_iterator(
+            start_date, end_date, "1_day", end_inclusive=True
         )
-        assert next(iterator) == ("2022-11-09", "2022-11-11")
-        assert next(iterator) == ("2022-11-11", "2022-11-13")
+        assert next(date_iterator) == ("2022-11-14", "2022-11-14")
+        assert next(date_iterator) == ("2022-11-15", "2022-11-15")
         with pytest.raises(StopIteration):
-            next(iterator)
+            next(date_iterator)
 
-    def test_get_start_date_conditions(self):
-        """test range_iterator exit conditions"""
-        handler = DateIntervalHandler(interval="weekly", time_format="%Y-%m-%d")
-        interval_handler = handler.range_iterator_factory()
-
-        iterator = interval_handler.range_iterator(
-            datetime(2022, 11, 9), datetime(2022, 11, 15)
+    def test_date_range_iterator_end_inclusive_false(self):
+        """Test date_range_iterator"""
+        start_date, end_date = "2022-11-14", "2022-11-15"
+        date_iterator = date_range_iterator(
+            start_date, end_date, "1_day", end_inclusive=False
         )
-        assert next(iterator) == ("2022-11-06", "2022-11-13")
-        assert next(iterator) == ("2022-11-13", "2022-11-20")
-
-        handler = DateIntervalHandler(interval="monthly", time_format="%Y-%m-%d")
-        interval_handler = handler.range_iterator_factory()
-
-        iterator = interval_handler.range_iterator(
-            datetime(2022, 11, 9), datetime(2022, 11, 15)
-        )
-        assert next(iterator) == ("2022-11-01", "2022-12-01")
+        assert next(date_iterator) == ("2022-11-14", "2022-11-15")
+        assert next(date_iterator) == ("2022-11-15", "2022-11-16")
         with pytest.raises(StopIteration):
-            next(iterator)
+            next(date_iterator)
 
-        handler = DateIntervalHandler(interval="yearly", time_format="%Y-%m-%d")
-        interval_handler = handler.range_iterator_factory()
-        iterator = interval_handler.range_iterator(
-            datetime(2022, 11, 9), datetime(2022, 11, 15)
+    def test_date_range_iterator_time_format(self):
+        """Test date_range_iterator"""
+        start_date, end_date = "2022-11-14", "2022-11-15"
+        date_iterator = date_range_iterator(
+            start_date, end_date, "1_day", end_inclusive=False, time_format="%d/%m/%Y"
         )
-        assert next(iterator) == ("2022-01-01", "2023-01-01")
+        assert next(date_iterator) == ("14/11/2022", "15/11/2022")
+        assert next(date_iterator) == ("15/11/2022", "16/11/2022")
         with pytest.raises(StopIteration):
-            next(iterator)
-
-        handler = DateIntervalHandler(interval="2_year", time_format="%Y-%m-%d")
-        interval_handler = handler.range_iterator_factory()
-
-        iterator = interval_handler.range_iterator(
-            datetime(2022, 11, 9), datetime(2022, 11, 15)
-        )
-        assert next(iterator) == ("2022-11-09", "2024-11-09")
-        with pytest.raises(StopIteration):
-            next(iterator)
+            next(date_iterator)
