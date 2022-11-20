@@ -22,6 +22,10 @@ The rules guiding what interval gets applied are as follows:
 - `last_month`/`1_months_ago`/`n_months_ago`: translates to start of `n_months` from `current date`
 - `last_year`: translates to start of the previous year
 - `1_years_ago`/`n_years_ago`: translates to n_years from current date
+- `this_week`: Sunday of current week.
+- `this_month`: the first date of the current month.
+- `this_year`: the first day of the current year.
+
 For each interval, it should return start date  that should be inclusive and final range `MUST` include the provided end_date.  For example:
 ```
 Given input `start_date 2022-01-01` and `end_date 2022-01-03` with daily interval we get back these pairs:

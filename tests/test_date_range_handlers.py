@@ -4,6 +4,7 @@
 import os
 import sys
 from datetime import datetime, timedelta
+from dateutil.relativedelta import relativedelta
 
 import pytest
 
@@ -46,9 +47,9 @@ class TestDateManagers:
         """
         time_bucket_mapping = {
             "day": ["day", "yesterday", "today"],
-            "week": ["week", "weekly", "last_week"],
-            "month": ["month", "monthly", "last_month"],
-            "year": ["year", "yearly", "last_year"],
+            "week": ["week", "weekly", "last_week", "this_week"],
+            "month": ["month", "monthly", "last_month", "this_month"],
+            "year": ["year", "yearly", "last_year", "this_year"],
         }
 
         return time_bucket_mapping
@@ -189,3 +190,31 @@ class TestDateManagers:
         assert next(date_iterator) == ("15/11/2022", "16/11/2022")
         with pytest.raises(StopIteration):
             next(date_iterator)
+
+    def test_date_string_handler_this_prefix(self):
+        """Test this date phrases"""
+        current_date = datetime.now()
+        week_start = (current_date - timedelta(days=current_date.weekday())).date()
+        month_start = current_date.replace(day=1).date()
+        year_start = current_date.replace(month=1, day=1).date()
+        if datetime.strftime(current_date, "%A") == "Sunday":
+            week_start = current_date.date()
+
+        assert date_string_handler("this_week").date() == week_start
+        assert date_string_handler("this_month").date() == month_start
+        assert date_string_handler("this_year").date() == year_start
+
+    def test_date_string_handler_last_prefix(self):
+        """Test last date phrases"""
+        current_date = datetime.now()
+        last_week_start = (current_date - timedelta(days=current_date.weekday())).date()
+        last_month_start = current_date.replace(day=1).date() - relativedelta(months=1)
+        last_year_start = current_date.replace(month=1, day=1).date() - relativedelta(
+            years=1
+        )
+        if datetime.strftime(current_date, "%A") == "Sunday":
+            last_week_start = current_date.date()
+        last_week_start = last_week_start - relativedelta(weeks=1)
+        assert date_string_handler("last_week").date() == last_week_start
+        assert date_string_handler("last_month").date() == last_month_start
+        assert date_string_handler("last_year").date() == last_year_start

@@ -99,7 +99,7 @@ class YearInterval(BaseDateInterval):
 
     def get_start_date(self, start_date: datetime) -> datetime:
         """Handles Yearly Buckets"""
-        if self.time_bucket in ["yearly"]:
+        if self.time_bucket in ["yearly", "last_year", "this_year"]:
             start_date = start_date.replace(month=1, day=1)
         return start_date
 
@@ -126,7 +126,7 @@ class MonthInterval(BaseDateInterval):
 
     def get_start_date(self, start_date: datetime) -> datetime:
         """Handles Monthly Buckets"""
-        if self.time_bucket in ["monthly", "month"]:
+        if self.time_bucket in ["monthly", "month", "last_month", "this_month"]:
             start_date = start_date.replace(day=1)
         return start_date
 
@@ -147,7 +147,7 @@ class WeekInterval(BaseDateInterval):
 
     def get_start_date(self, start_date: datetime) -> datetime:
         """Handles Weekly Buckets"""
-        if self.time_bucket in ["weekly"]:
+        if self.time_bucket in ["weekly", "last_week", "this_week"]:
             if datetime.strftime(start_date, "%A") == "Sunday":
                 return start_date
             start_date = start_date - timedelta(days=start_date.weekday() + 1)
@@ -199,17 +199,17 @@ class PastDatePhraseHandler(DatePhraseHandler):
             self.date_value.strip().lower()
         ):
             raise TypeError(
-                f"wrong date_string provided, expecting a string: {self.date_value}"
+                f"wrong date_value provided, expecting a string {self.date_value}"
             )
         date_value = self.date_value.lower().strip()
         if date_value in ["yesterday", "last_week", "last_month", "last_year"]:
-            self.cadence, self.time_bucket = 1, self.date_value
-        if date_value in ["today"]:
-            self.cadence, self.time_bucket = 0, self.date_value
+            self.cadence, self.time_bucket = 1, date_value
+        if date_value in ["today", "this_week", "this_year", "this_month"]:
+            self.cadence, self.time_bucket = 0, date_value
 
         if re.search(r"\_", date_value) and self.time_bucket is None:
             if len(date_value.split("_")) != 3 or date_value.split("_")[2] != "ago":
-                raise DateValueError(f"wrong date_string provided {date_value}")
+                raise DateValueError(f"wrong date value provided {date_value}")
             if len(date_value.split("_")) == 3:
                 self.cadence, self.time_bucket = date_value.split("_")[:-1]
                 if self.time_bucket.endswith("s"):
@@ -242,12 +242,12 @@ class IntervalDatePhraseHandler(DatePhraseHandler):
             r"[a-z]+", str(self.date_value).lower()
         ):
             raise TypeError(
-                f"wrong interval provided, expecting a string: {self.date_value}"
+                f"WARNING: Wrong interval provided, expecting a string {self.date_value}"
             )
 
         date_value = self.date_value.lower().strip()
         if len(date_value.split("_")) > 2:
-            raise TimeIntervalError("invalid value for interval provided")
+            raise TimeIntervalError(f"Invalid value for interval provided {date_value}")
 
         if date_value in ["day", "yearly", "weekly", "monthly"]:
             self.cadence, self.time_bucket = 1, date_value
@@ -282,9 +282,9 @@ class DateHandlerFactory:
         root_bucket = None
         time_bucket_mapping = {
             "day": ["day", "yesterday", "today"],
-            "week": ["week", "weekly", "last_week"],
-            "month": ["month", "monthly", "last_month"],
-            "year": ["year", "yearly", "last_year"],
+            "week": ["week", "weekly", "last_week", "this_week"],
+            "month": ["month", "monthly", "last_month", "this_month"],
+            "year": ["year", "yearly", "last_year", "this_year"],
         }
 
         for key, val in time_bucket_mapping.items():
