@@ -199,7 +199,7 @@ class PastDatePhraseHandler(DatePhraseHandler):
             self.date_value.strip().lower()
         ):
             raise TypeError(
-                f"wrong date_value provided, expecting a string {self.date_value}"
+                f"wrong date_string provided, expecting a string but got: {self.date_value}"
             )
         date_value = self.date_value.lower().strip()
         if date_value in ["yesterday", "last_week", "last_month", "last_year"]:
@@ -217,7 +217,7 @@ class PastDatePhraseHandler(DatePhraseHandler):
 
         if self.cadence is None or self.time_bucket is None:
             raise CadenceTimeBucketError(
-                f"cadence or time_bucket is None, wrong date_value provided '{date_value}'"
+                f"cadence or time_bucket is None, wrong date_string provided '{date_value}'"
             )
         # print(self.cadence, self.time_bucket)
 
@@ -242,15 +242,17 @@ class IntervalDatePhraseHandler(DatePhraseHandler):
             r"[a-z]+", str(self.date_value).lower()
         ):
             raise TypeError(
-                f"WARNING: Wrong interval provided, expecting a string {self.date_value}"
+                f"wrong interval provided, expecting a string but got: {self.date_value}"
             )
 
         date_value = self.date_value.lower().strip()
-        if len(date_value.split("_")) > 2:
-            raise TimeIntervalError(f"Invalid value for interval provided {date_value}")
-
         if date_value in ["day", "yearly", "weekly", "monthly"]:
             self.cadence, self.time_bucket = 1, date_value
+
+        if len(date_value.split("_")) > 2 and self.time_bucket is None:
+            raise TimeIntervalError(
+                f"invalid value for interval provided: {date_value}"
+            )
 
         if len(self.date_value.replace(" ", "_").split("_")) == 2:
             self.cadence, self.time_bucket = date_value.split("_")
@@ -281,7 +283,7 @@ class DateHandlerFactory:
 
         root_bucket = None
         time_bucket_mapping = {
-            "day": ["day", "yesterday", "today"],
+            "day": ["day", "yesterday", "today", "month_to_date", "year_to_date"],
             "week": ["week", "weekly", "last_week", "this_week"],
             "month": ["month", "monthly", "last_month", "this_month"],
             "year": ["year", "yearly", "last_year", "this_year"],
@@ -322,7 +324,7 @@ def date_string_handler(date_string: str) -> datetime:
     start_date = datetime.now()
     start_date = handler.get_start_date(start_date=start_date)
 
-    date_value = handler.subtract_interval(start_date, cadence)
+    date_value = handler.subtract_interval(date_value=start_date, cadence=cadence)
     return date_value
 
 
@@ -354,8 +356,7 @@ def date_range_iterator(
     enddate = date_string_handler(end_date)
 
     startdate = handler.get_start_date(start_date=startdate)
-
-    next_end = handler.add_interval(startdate, cadence)
+    next_end = handler.add_interval(date_value=startdate, cadence=cadence)
     while startdate <= enddate:
         end = next_end
         if end_inclusive:
