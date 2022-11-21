@@ -15,7 +15,8 @@ jobs:
       COVERAGE_THRESHOLD: 93
 
     steps:
-      - uses: actions/checkout@v3
+      - name: checkout repo
+        uses: actions/checkout@v3
 
       - name: set up python 3.9
         uses: actions/setup-python@v1
@@ -26,14 +27,10 @@ jobs:
         run: |
           python -m pip install --upgrade pip
 
-      - name: list_dir
-        run: |
-          pwd && ls -al
-
       - name: install requirements
         run: |
-          pip install python-dateutil
-          # make install_requirements
+          # pip install python-dateutil
+          make install_requirements
 
       # an automated security check
       - name: Run PyCharm Security
@@ -50,14 +47,15 @@ jobs:
       #     docker run --rm \
       #     date_man:latest \
       #     pytest --cov-report term --cov-fail-under=${COVERAGE_THRESHOLD} tests
+
+      - name: tests with pytest
+        run: |
+          # pip install --no-cache pytest mock pytest-mock coverage && \
+          # coverage run -m pytest && \
+          # coverage report --fail-under=${COVERAGE_THRESHOLD}
+          make lint
+
       - name: run pylint
         run: |
-          # make lint
-          pip install pylint && find . -type f -name "*.py" | xargs pylint
-
-      # - name: tests with pytest
-      #   run: |
-      #     pip install --no-cache pytest mock pytest-mock coverage && \
-      #     coverage run -m pytest && \
-      #     coverage report --fail-under=${COVERAGE_THRESHOLD}
-      #     # make lint
+          make lint
+          # pip install pylint && find . -type f -name "*.py" | xargs pylint
