@@ -15,6 +15,8 @@ jobs:
       COVERAGE_THRESHOLD: 93
 
     steps:
+      - uses: actions/checkout@v3
+
       - name: set up python 3.9
         uses: actions/setup-python@v1
         with:
@@ -39,19 +41,19 @@ jobs:
         with:
           fail_on_warnings: no
 
-      - name: build test image
-        run: |
-          docker build -t date_man -f Dockerfile.test
-
-      - name: run tests
-        run: |
-          docker run --rm \
-          date_man:latest \
-          pytest --cov-report term --cov-fail-under=${COVERAGE_THRESHOLD} tests
-      # - name: run pylint
+      # - name: build test image
       #   run: |
-      #     # make lint
-      #     pip install pylint && find . -type f -name "*.py" | xargs pylint
+      #     docker build -t date_man -f Dockerfile.test
+
+      # - name: run tests
+      #   run: |
+      #     docker run --rm \
+      #     date_man:latest \
+      #     pytest --cov-report term --cov-fail-under=${COVERAGE_THRESHOLD} tests
+      - name: run pylint
+        run: |
+          # make lint
+          pip install pylint && find . -type f -name "*.py" | xargs pylint
 
       # - name: tests with pytest
       #   run: |
