@@ -1,7 +1,7 @@
 # all: test lint
 COVERAGE_THRESHOLD ?= 90
 
-install_requirements:
+install-requirements:
 	pip install --no-cache -r requirements.txt
 
 test:
@@ -12,4 +12,5 @@ test:
 
 lint:
 	pip install --no-cache pylint
-	find . -type f -name "*.py" | xargs pylint
+	find . -type f -name "*.py" | xargs pylint 
+	# --ignored-modules=pyspark,awsglue --extension-pkg-whitelist=pyspark,awsglue;
