@@ -30,7 +30,8 @@ jobs:
 
       - name: install requirements
         run: |
-          make install_requirements
+          pip install -r requirements.txt
+          # make install_requirements
 
       # an automated security check
       - name: Run PyCharm Security
@@ -40,8 +41,13 @@ jobs:
 
       - name: tests with pytest
         run: |
-          make test
+          pip install --no-cache pytest mock pytest-mock coverage && \
+          coverage run -m pytest && \
+          coverage report --fail-under=${COVERAGE_THRESHOLD}
+          # make lint
 
       - name: run pylint
         run: |
-          make lint
+          # make lint
+          pip install pylint && \
+          find . -type f -name "*.py" | xargs pylint
