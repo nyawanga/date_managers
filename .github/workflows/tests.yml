@@ -30,7 +30,7 @@ jobs:
 
       - name: install requirements
         run: |
-          pip install -r requirements.txt
+          pip install python-dateutil
           # make install_requirements
 
       # an automated security check
