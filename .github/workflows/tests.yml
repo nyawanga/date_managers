@@ -39,14 +39,23 @@ jobs:
         with:
           fail_on_warnings: no
 
-      - name: run pylint
+      - name: build test image
         run: |
-          # make lint
-          pip install pylint && find . -type f -name "*.py" | xargs pylint
+          docker build -t date_man -f Dockerfile.test
 
-      - name: tests with pytest
+      - name: run tests
         run: |
-          pip install --no-cache pytest mock pytest-mock coverage && \
-          coverage run -m pytest && \
-          coverage report --fail-under=${COVERAGE_THRESHOLD}
-          # make lint
+          docker run --rm \
+          date_man:latest \
+          pytest --cov-report term --cov-fail-under=${COVERAGE_THRESHOLD} tests
+      # - name: run pylint
+      #   run: |
+      #     # make lint
+      #     pip install pylint && find . -type f -name "*.py" | xargs pylint
+
+      # - name: tests with pytest
+      #   run: |
+      #     pip install --no-cache pytest mock pytest-mock coverage && \
+      #     coverage run -m pytest && \
+      #     coverage report --fail-under=${COVERAGE_THRESHOLD}
+      #     # make lint
