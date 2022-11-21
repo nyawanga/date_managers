@@ -45,12 +45,12 @@ jobs:
         run: |
           make lint
 
-      - name: build test image
-        run: |
-          docker build -t date_man -f Dockerfile.test
+      # - name: build test image
+      #   run: |
+      #     docker build -t date_man -f Dockerfile.test
 
-      - name: run tests
-        run: |
-          docker run --rm \
-          date_man:latest \
-          pytest --cov-report term --cov-fail-under=${COVERAGE_THRESHOLD} tests
+      # - name: run tests
+      #   run: |
+      #     docker run --rm \
+      #     date_man:latest \
+      #     pytest --cov-report term --cov-fail-under=${COVERAGE_THRESHOLD} tests
