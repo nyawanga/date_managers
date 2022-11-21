@@ -42,8 +42,7 @@ jobs:
       - name: run pylint
         run: |
           # make lint
-          pip install pylint && \
-          find . -type f -name "*.py" | xargs pylint
+          pip install pylint && find . -type f -name "*.py" | xargs pylint
 
       - name: tests with pytest
         run: |
