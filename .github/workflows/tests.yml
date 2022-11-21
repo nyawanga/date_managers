@@ -24,6 +24,10 @@ jobs:
         run: |
           python -m pip install --upgrade pip
 
+      - name: list_dir
+        run: |
+          pwd && ls -al
+
       - name: install requirements
         run: |
           make install_requirements
