@@ -63,6 +63,11 @@ class TestDateManagers:
             "year": YearInterval,
         }
 
+    # def test_base_classes(self):
+    #     """Test Base Classes"""
+    #     with pytest.raises(NotImplementedError):
+    #         DatePhraseHandler().phrase_to_date()
+
     def test_past_date_phrase_handler(self):
         """Test the class PastDatePhraseHandler"""
 
@@ -74,6 +79,16 @@ class TestDateManagers:
         handler.phrase_to_date()
         assert handler.cadence == 1
         assert handler.time_bucket == "week"
+
+        # test time_bucket is stemmed to root word 'years to year, weeks to week'
+        handler = PastDatePhraseHandler("2_years_ago")
+        assert handler.date_value == "2_years_ago"
+        assert handler.cadence is None
+        assert handler.time_bucket is None
+
+        handler.phrase_to_date()
+        assert handler.cadence == 2
+        assert handler.time_bucket == "year"
 
         handler = PastDatePhraseHandler("1")
         with pytest.raises(TypeError):
@@ -193,8 +208,8 @@ class TestDateManagers:
 
     def test_date_string_handler_this_prefix(self):
         """Test this date phrases"""
-        current_date = datetime.now()
-        week_start = (current_date - timedelta(days=current_date.weekday())).date()
+        current_date = datetime(2022, 11, 20)  # datetime.now()
+        week_start = (current_date - timedelta(days=current_date.weekday() + 1)).date()
         month_start = current_date.replace(day=1).date()
         year_start = current_date.replace(month=1, day=1).date()
         if datetime.strftime(current_date, "%A") == "Sunday":
@@ -207,7 +222,9 @@ class TestDateManagers:
     def test_date_string_handler_last_prefix(self):
         """Test last date phrases"""
         current_date = datetime.now()
-        last_week_start = (current_date - timedelta(days=current_date.weekday())).date()
+        last_week_start = (
+            current_date - timedelta(days=current_date.weekday() + 1)
+        ).date()
         last_month_start = current_date.replace(day=1).date() - relativedelta(months=1)
         last_year_start = current_date.replace(month=1, day=1).date() - relativedelta(
             years=1
@@ -215,6 +232,79 @@ class TestDateManagers:
         if datetime.strftime(current_date, "%A") == "Sunday":
             last_week_start = current_date.date()
         last_week_start = last_week_start - relativedelta(weeks=1)
+
         assert date_string_handler("last_week").date() == last_week_start
         assert date_string_handler("last_month").date() == last_month_start
         assert date_string_handler("last_year").date() == last_year_start
+
+    def test_week_add_interval(self):
+        """Test WeekInterval get_start_date method"""
+        date_val = datetime(2022, 11, 21)
+        expected_value = datetime(2022, 11, 20).date()
+        week_start = WeekInterval(time_bucket="weekly", cadence=1).get_start_date(
+            start_date=date_val
+        )
+        assert week_start.date() == expected_value
+        week_start = WeekInterval(time_bucket="this_week", cadence=1).get_start_date(
+            start_date=date_val
+        )
+        assert week_start.date() == expected_value
+        week_start = WeekInterval(time_bucket="last_week", cadence=1).get_start_date(
+            start_date=date_val
+        )
+        assert week_start.date() == expected_value
+        week_start = WeekInterval(time_bucket="weekly", cadence=1).get_start_date(
+            start_date=datetime(2022, 11, 20)
+        )
+        assert week_start.date() == expected_value
+
+    def test_month_add_interval(self):
+        """Test MonthInterval get_start_date method"""
+        date_val = datetime(2022, 11, 21)
+        expected_value = datetime(2022, 11, 1).date()
+        period_start = MonthInterval(time_bucket="monthly", cadence=1).get_start_date(
+            start_date=date_val
+        )
+        assert period_start.date() == expected_value
+        period_start = MonthInterval(time_bucket="month", cadence=1).get_start_date(
+            start_date=date_val
+        )
+        assert period_start.date() == expected_value
+        period_start = MonthInterval(
+            time_bucket="last_month", cadence=1
+        ).get_start_date(start_date=date_val)
+        assert period_start.date() == expected_value
+        period_start = MonthInterval(
+            time_bucket="this_month", cadence=1
+        ).get_start_date(start_date=date_val)
+        assert period_start.date() == expected_value
+
+    def test_week_interval_date_operation(self):
+        """test week interval date operations"""
+        date_value = datetime(2022, 11, 20)
+        interval_handler = WeekInterval(time_bucket="weekly", cadence=1)
+        _add = interval_handler.add_interval(date_value=date_value, cadence=1)
+        _subtract = interval_handler.subtract_interval(date_value=date_value, cadence=1)
+
+        assert _add == datetime(2022, 11, 27)
+        assert _subtract == datetime(2022, 11, 13)
+
+    def test_month_interval_date_operation(self):
+        """test month interval date operations"""
+        date_value = datetime(2022, 11, 20)
+        interval_handler = MonthInterval(time_bucket="monthly", cadence=1)
+        _add = interval_handler.add_interval(date_value=date_value, cadence=1)
+        _subtract = interval_handler.subtract_interval(date_value=date_value, cadence=1)
+
+        assert _add == datetime(2022, 12, 20)
+        assert _subtract == datetime(2022, 10, 20)
+
+    def test_year_interval_date_operation(self):
+        """test year interval date operations"""
+        date_value = datetime(2022, 11, 20)
+        interval_handler = YearInterval(time_bucket="year", cadence=1)
+        _add = interval_handler.add_interval(date_value=date_value, cadence=1)
+        _subtract = interval_handler.subtract_interval(date_value=date_value, cadence=1)
+
+        assert _add == datetime(2023, 11, 20)
+        assert _subtract == datetime(2021, 11, 20)

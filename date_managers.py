@@ -1,5 +1,5 @@
 """UTILITIES TO HANDLE DATE VALUES"""
-
+# pylint: disable=too-few-public-methods
 from abc import ABC, abstractmethod
 from datetime import datetime, timedelta
 
