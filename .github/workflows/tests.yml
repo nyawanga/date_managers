@@ -39,7 +39,7 @@ jobs:
 
       - name: tests with pytest
         run: |
-          make lint
+          make test
 
       - name: run pylint
         run: |
