@@ -283,7 +283,7 @@ class DateHandlerFactory:
 
         root_bucket = None
         time_bucket_mapping = {
-            "day": ["day", "yesterday", "today", "month_to_date", "year_to_date"],
+            "day": ["day", "yesterday", "today"],
             "week": ["week", "weekly", "last_week", "this_week"],
             "month": ["month", "monthly", "last_month", "this_month"],
             "year": ["year", "yearly", "last_year", "this_year"],
